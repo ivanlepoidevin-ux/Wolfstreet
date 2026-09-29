@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Portefeuille</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#0E6A6A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Portefeuille">
+<style>
+:root{--bg:#EDF0F3;--card:#fff;--ink:#16222D;--mute:#5C6B78;--line:#D3DAE0;--acc:#0E6A6A;--pos:#1B7A4B;--neg:#B0362E;--bar:#0E6A6A}
+@media (prefers-color-scheme:dark){:root{--bg:#101A22;--card:#18242E;--ink:#E7EDF2;--mute:#93A3B0;--line:#2A3946;--acc:#5FC1B8;--pos:#5DCB8F;--neg:#F08A80;--bar:#5FC1B8}}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-top:env(safe-area-inset-top,0px)}
+header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:18px 18px 10px}
+h1{font:600 26px/1.1 Georgia,"Iowan Old Style",serif;margin:0}
+#meta{color:var(--mute);font-size:12.5px;text-align:right}
+#refresh{background:none;border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:6px 10px;font:inherit;font-size:13px;margin-left:8px}
+main{padding:0 12px 96px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+.card h2{font:600 18px/1.2 Georgia,serif;margin:0 0 10px}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;white-space:nowrap}
+th,td{padding:9px 12px;text-align:right;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:var(--card);border-right:1px solid var(--line)}
+tr.head td{font-weight:600;background:var(--bg)}
+tr.head td:first-child{background:var(--bg)}
+tr:last-child td{border-bottom:0}
+.pos{color:var(--pos)}.neg{color:var(--neg)}
+.row{display:grid;grid-template-columns:1fr auto;gap:2px 10px;margin:10px 0}
+.row .v{font-variant-numeric:tabular-nums;font-weight:600}
+.track{grid-column:1/-1;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.track i{display:block;height:100%;background:var(--bar);border-radius:3px}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav button{flex:1;padding:14px 0;background:none;border:0;color:var(--mute);font:600 14px system-ui,sans-serif}
+nav button[aria-selected=true]{color:var(--acc);box-shadow:inset 0 2px 0 var(--acc)}
+nav button:focus-visible,#refresh:focus-visible{outline:2px solid var(--acc);outline-offset:-2px}
+.msg{padding:24px 8px;color:var(--mute);text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <h1>Portefeuille</h1>
+  <div id="meta"><span id="status">Chargement…</span><button id="refresh" type="button">Actualiser</button></div>
+</header>
+<main id="view"></main>
+<nav role="tablist">
+  <button role="tab" id="t-tab" aria-selected="true">Tableau</button>
+  <button role="tab" id="t-rep" aria-selected="false">Répartitions</button>
+</nav>
+<script>
+// ▼ Ton onglet « Site », publié en CSV
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT1ZqyzzApyrgCRhIr04OF6Ix9LHhNTYeFycQ7BomjblePKS9cTzs2MEYDcLDNo6A/pub?gid=1991388935&single=true&output=csv";
+const COLS = 7, ROWS = 45;   // colonnes A à G, lignes 1 à 45
+
+let grid = [], tab = "tab";
+const $ = s => document.querySelector(s);
+const esc = s => s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const norm = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
+
+function parseCSV(t){
+  const rows=[]; let r=[], c="", q=false;
+  for(let i=0;i<t.length;i++){
+    const ch=t[i];
+    if(q){ if(ch=='"'){ if(t[i+1]=='"'){c+='"';i++} else q=false } else c+=ch }
+    else if(ch=='"') q=true;
+    else if(ch==","){ r.push(c); c="" }
+    else if(ch=="\n"){ r.push(c); rows.push(r); r=[]; c="" }
+    else if(ch!="\r") c+=ch;
+  }
+  if(c!==""||r.length){ r.push(c); rows.push(r) }
+  return rows;
+}
+function toGrid(rows){
+  let g = rows.slice(0,ROWS).map(r => Array.from({length:COLS},(_,i)=>(r[i]||"").trim()));
+  while(g.length && g[g.length-1].every(x=>!x)) g.pop();
+  return g;
+}
+const num = s => { const n=parseFloat(s.replace(/[^\d,.\-−]/g,"").replace("−","-").replace(",",".")); return isNaN(n)?NaN:n };
+const sign = s => /^[-−]\s*\d/.test(s) ? "neg" : /^\+\s*\d/.test(s) ? "pos" : "";
+
+function renderTable(){
+  if(!grid.length) return '<div class="msg">Aucune donnée trouvée dans A1:G45.</div>';
+  const used = Array.from({length:COLS},(_,c)=>grid.some(r=>r[c]));
+  const cols = used.map((u,i)=>u?i:-1).filter(i=>i>=0);
+  let firstHead = grid.findIndex(r=>r.some(x=>x));
+  const body = grid.map((r,ri)=>{
+    if(!r.some(x=>x)) return "";
+    const cells = cols.map(c=>`<td class="${sign(r[c])}">${esc(r[c])}</td>`).join("");
+    return `<tr class="${ri===firstHead?"head":""}">${cells}</tr>`;
+  }).join("");
+  return `<div class="scroll"><table>${body}</table></div>`;
+}
+
+function blocks(){
+  const out=[];
+  grid.forEach((row,r)=>{
+    for(let c=0;c<COLS-1;c++){
+      if(/^(pays|positions?|secteurs?)$/.test(norm(row[c]))){
+        const items=[];
+        for(let rr=r+1;rr<grid.length && grid[rr][c];rr++){
+          const v=num(grid[rr][c+1]);
+          if(!isNaN(v)) items.push({label:grid[rr][c],raw:grid[rr][c+1],v});
+        }
+        if(items.length) out.push({title:row[c],items});
+      }
+    }
+  });
+  return out;
+}
+function renderRep(){
+  const b=blocks();
+  if(!b.length) return '<div class="msg">Aucun bloc Pays / Position / Secteur détecté. Vérifie que les titres sont écrits tels quels dans l’onglet.</div>';
+  return b.map(({title,items})=>{
+    const max=Math.max(...items.map(i=>Math.abs(i.v)))||1;
+    const rows=items.sort((a,b)=>b.v-a.v).map(i=>
+      `<div class="row"><span>${esc(i.label)}</span><span class="v">${esc(i.raw)}</span><div class="track"><i style="width:${Math.max(2,Math.abs(i.v)/max*100)}%"></i></div></div>`).join("");
+    return `<section class="card"><h2>${esc(title)}</h2>${rows}</section>`;
+  }).join("");
+}
+function render(){
+  $("#view").innerHTML = tab==="tab" ? renderTable() : renderRep();
+  $("#t-tab").setAttribute("aria-selected", tab==="tab");
+  $("#t-rep").setAttribute("aria-selected", tab==="rep");
+}
+async function load(){
+  const st=$("#status");
+  st.textContent="Actualisation…";
+  try{
+    const res=await fetch(CSV_URL+"&t="+Date.now(),{cache:"no-store"});
+    if(!res.ok) throw new Error(res.status);
+    const txt=await res.text();
+    localStorage.setItem("pf-csv",txt); localStorage.setItem("pf-time",Date.now());
+    grid=toGrid(parseCSV(txt));
+    st.textContent="Mis à jour à "+new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
+  }catch(e){
+    const txt=localStorage.getItem("pf-csv");
+    if(txt){
+      grid=toGrid(parseCSV(txt));
+      const t=new Date(+localStorage.getItem("pf-time"));
+      st.textContent="Hors ligne, données du "+t.toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
+    } else { grid=[]; st.textContent="Impossible de charger le Sheet"; }
+  }
+  render();
+}
+$("#t-tab").onclick=()=>{tab="tab";render()};
+$("#t-rep").onclick=()=>{tab="rep";render()};
+$("#refresh").onclick=load;
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden) load() });
+load();
+if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body>
+</html>
