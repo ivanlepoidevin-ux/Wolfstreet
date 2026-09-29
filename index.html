@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
 <title>Portefeuille</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -11,35 +12,38 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Portefeuille">
 <style>
-:root{--bg:#EDF0F3;--card:#fff;--ink:#16222D;--mute:#5C6B78;--line:#D3DAE0;--acc:#0E6A6A;--pos:#1B7A4B;--neg:#B0362E;--bar:#0E6A6A}
-@media (prefers-color-scheme:dark){:root{--bg:#101A22;--card:#18242E;--ink:#E7EDF2;--mute:#93A3B0;--line:#2A3946;--acc:#5FC1B8;--pos:#5DCB8F;--neg:#F08A80;--bar:#5FC1B8}}
+:root{--bg:#EDF0F3;--card:#fff;--ink:#16222D;--mute:#5C6B78;--line:#D3DAE0;--acc:#0E6A6A;--pos:#1B7A4B;--neg:#B0362E;--sl:40%}
+@media (prefers-color-scheme:dark){:root{--bg:#101A22;--card:#18242E;--ink:#E7EDF2;--mute:#93A3B0;--line:#2A3946;--acc:#5FC1B8;--pos:#5DCB8F;--neg:#F08A80;--sl:62%}}
 *{box-sizing:border-box}
-html,body{margin:0;height:100%}
-body{background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-top:env(safe-area-inset-top,0px)}
-header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:18px 18px 10px}
+html,body{margin:0;max-width:100%;overflow-x:hidden;-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-top:env(safe-area-inset-top,0px)}
+header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px;padding:16px 16px 10px}
 h1{font:600 26px/1.1 Georgia,"Iowan Old Style",serif;margin:0}
-#meta{color:var(--mute);font-size:12.5px;text-align:right}
-#refresh{background:none;border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:6px 10px;font:inherit;font-size:13px;margin-left:8px}
+#meta{display:flex;align-items:center;gap:8px;color:var(--mute);font-size:12px}
+#refresh{background:none;border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:7px 11px;font:inherit;font-size:13px}
 main{padding:0 12px 96px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
-.card h2{font:600 18px/1.2 Georgia,serif;margin:0 0 10px}
-.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--card)}
-table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;white-space:nowrap}
-th,td{padding:9px 12px;text-align:right;border-bottom:1px solid var(--line)}
-th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:var(--card);border-right:1px solid var(--line)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:16px}
+.blk h2,.oth h2{font:600 21px/1.2 Georgia,"Iowan Old Style",serif;margin:18px 4px 8px}
+.tbl{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{padding:10px 8px;text-align:right;border-bottom:1px solid var(--line);overflow-wrap:anywhere;vertical-align:top}
+td:first-child{text-align:left}
+table.dense td{font-size:12.5px;padding:9px 5px}
 tr.head td{font-weight:600;background:var(--bg)}
-tr.head td:first-child{background:var(--bg)}
 tr:last-child td{border-bottom:0}
 .pos{color:var(--pos)}.neg{color:var(--neg)}
-.row{display:grid;grid-template-columns:1fr auto;gap:2px 10px;margin:10px 0}
-.row .v{font-variant-numeric:tabular-nums;font-weight:600}
-.track{grid-column:1/-1;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
-.track i{display:block;height:100%;background:var(--bar);border-radius:3px}
+.donut{display:block;width:min(62vw,240px);height:auto;margin:2px auto 14px}
+.lg{display:grid;grid-template-columns:14px 1fr auto;gap:10px;align-items:baseline;padding:9px 0;border-top:1px solid var(--line)}
+.lg i{width:12px;height:12px;border-radius:3px;align-self:center}
+.lg .n{overflow-wrap:anywhere}
+.lg .v,.ln .v{font-variant-numeric:tabular-nums;font-weight:600;text-align:right}
+.ln{display:grid;grid-template-columns:1fr auto;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
+.ln:first-child{border-top:0}
 nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
-nav button{flex:1;padding:14px 0;background:none;border:0;color:var(--mute);font:600 14px system-ui,sans-serif}
+nav button{flex:1;padding:15px 0;background:none;border:0;color:var(--mute);font:600 15px system-ui,sans-serif}
 nav button[aria-selected=true]{color:var(--acc);box-shadow:inset 0 2px 0 var(--acc)}
 nav button:focus-visible,#refresh:focus-visible{outline:2px solid var(--acc);outline-offset:-2px}
-.msg{padding:24px 8px;color:var(--mute);text-align:center}
+.msg{padding:28px 10px;color:var(--mute);text-align:center}
 </style>
 </head>
 <body>
@@ -53,14 +57,17 @@ nav button:focus-visible,#refresh:focus-visible{outline:2px solid var(--acc);out
   <button role="tab" id="t-rep" aria-selected="false">Répartitions</button>
 </nav>
 <script>
-// ▼ Ton onglet « Site », publié en CSV
 const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT1ZqyzzApyrgCRhIr04OF6Ix9LHhNTYeFycQ7BomjblePKS9cTzs2MEYDcLDNo6A/pub?gid=1991388935&single=true&output=csv";
-const COLS = 7, ROWS = 45;   // colonnes A à G, lignes 1 à 45
+const COLS = 7, ROWS = 45, HEAD_ROWS = 8;   // colonnes A-G, lignes 1-45 ; onglet 1 = lignes 1-8
 
 let grid = [], tab = "tab";
 const $ = s => document.querySelector(s);
 const esc = s => s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const norm = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+const num = s => { const n=parseFloat(s.replace(/[^\d,.\-−]/g,"").replace("−","-").replace(",",".")); return isNaN(n)?NaN:n };
+const sign = s => /^[-−]\s*\d/.test(s) ? "neg" : /^\+\s*\d/.test(s) ? "pos" : "";
+const color = i => `hsl(${(172+i*47)%360} 55% var(--sl))`;
 
 function parseCSV(t){
   const rows=[]; let r=[], c="", q=false;
@@ -76,56 +83,72 @@ function parseCSV(t){
   return rows;
 }
 function toGrid(rows){
-  let g = rows.slice(0,ROWS).map(r => Array.from({length:COLS},(_,i)=>(r[i]||"").trim()));
+  const g = rows.slice(0,ROWS).map(r => Array.from({length:COLS},(_,i)=>(r[i]||"").trim()));
   while(g.length && g[g.length-1].every(x=>!x)) g.pop();
   return g;
 }
-const num = s => { const n=parseFloat(s.replace(/[^\d,.\-−]/g,"").replace("−","-").replace(",",".")); return isNaN(n)?NaN:n };
-const sign = s => /^[-−]\s*\d/.test(s) ? "neg" : /^\+\s*\d/.test(s) ? "pos" : "";
 
+/* Onglet 1 : lignes 1 à 8, texte à la ligne, aucun défilement horizontal */
 function renderTable(){
-  if(!grid.length) return '<div class="msg">Aucune donnée trouvée dans A1:G45.</div>';
-  const used = Array.from({length:COLS},(_,c)=>grid.some(r=>r[c]));
-  const cols = used.map((u,i)=>u?i:-1).filter(i=>i>=0);
-  let firstHead = grid.findIndex(r=>r.some(x=>x));
-  const body = grid.map((r,ri)=>{
-    if(!r.some(x=>x)) return "";
-    const cells = cols.map(c=>`<td class="${sign(r[c])}">${esc(r[c])}</td>`).join("");
-    return `<tr class="${ri===firstHead?"head":""}">${cells}</tr>`;
-  }).join("");
-  return `<div class="scroll"><table>${body}</table></div>`;
+  const part = grid.slice(0,HEAD_ROWS).filter(r=>r.some(x=>x));
+  if(!part.length) return '<div class="msg">Aucune donnée trouvée dans les 8 premières lignes.</div>';
+  const cols = [...Array(COLS).keys()].filter(c=>part.some(r=>r[c]));
+  const body = part.map((r,i)=>`<tr class="${i===0?"head":""}">${cols.map(c=>`<td class="${sign(r[c])}">${esc(r[c])}</td>`).join("")}</tr>`).join("");
+  return `<div class="tbl"><table class="${cols.length>4?"dense":""}">${body}</table></div>`;
 }
 
-function blocks(){
-  const out=[];
+/* Onglet 2 : blocs Pays / Position / Secteur (titre au-dessus) + graphique */
+function analyse(){
+  const used=new Set(), out=[];
   grid.forEach((row,r)=>{
     for(let c=0;c<COLS-1;c++){
       if(/^(pays|positions?|secteurs?)$/.test(norm(row[c]))){
+        used.add(r+","+c); used.add(r+","+(c+1));
         const items=[];
         for(let rr=r+1;rr<grid.length && grid[rr][c];rr++){
+          used.add(rr+","+c); used.add(rr+","+(c+1));
           const v=num(grid[rr][c+1]);
           if(!isNaN(v)) items.push({label:grid[rr][c],raw:grid[rr][c+1],v});
         }
-        if(items.length) out.push({title:row[c],items});
+        if(items.length) out.push({title:row[c],items:items.sort((a,b)=>b.v-a.v)});
       }
     }
   });
-  return out;
+  return {out,used};
+}
+function donut(items){
+  const tot=items.reduce((a,i)=>a+Math.abs(i.v),0)||1, R=44, C=2*Math.PI*R;
+  let off=0;
+  const arcs=items.map((it,i)=>{
+    const len=Math.abs(it.v)/tot*C;
+    const s=`<circle cx="60" cy="60" r="${R}" fill="none" stroke="${color(i)}" stroke-width="22" stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}" transform="rotate(-90 60 60)"/>`;
+    off+=len; return s;
+  }).join("");
+  return `<svg class="donut" viewBox="0 0 120 120" role="img" aria-label="Graphique de répartition">${arcs}</svg>`;
 }
 function renderRep(){
-  const b=blocks();
-  if(!b.length) return '<div class="msg">Aucun bloc Pays / Position / Secteur détecté. Vérifie que les titres sont écrits tels quels dans l’onglet.</div>';
-  return b.map(({title,items})=>{
-    const max=Math.max(...items.map(i=>Math.abs(i.v)))||1;
-    const rows=items.sort((a,b)=>b.v-a.v).map(i=>
-      `<div class="row"><span>${esc(i.label)}</span><span class="v">${esc(i.raw)}</span><div class="track"><i style="width:${Math.max(2,Math.abs(i.v)/max*100)}%"></i></div></div>`).join("");
-    return `<section class="card"><h2>${esc(title)}</h2>${rows}</section>`;
+  const {out,used}=analyse();
+  let html=out.map(b=>{
+    const lg=b.items.map((it,i)=>`<div class="lg"><i style="background:${color(i)}"></i><span class="n">${esc(it.label)}</span><span class="v ${sign(it.raw)}">${esc(it.raw)}</span></div>`).join("");
+    return `<section class="blk"><h2>${esc(cap(b.title))}</h2><div class="card">${donut(b.items)}${lg}</div></section>`;
   }).join("");
+  // Cellules restantes (lignes 9 et suivantes) non rattachées à un bloc
+  const extra=[];
+  for(let r=HEAD_ROWS;r<grid.length;r++){
+    const cells=grid[r].filter((x,c)=>x && !used.has(r+","+c));
+    if(cells.length) extra.push(cells);
+  }
+  if(extra.length){
+    html+=`<section class="oth"><h2>Autres données</h2><div class="card">${extra.map(c=>`<div class="ln"><span>${esc(c[0])}</span><span class="v">${esc(c.slice(1).join("  "))}</span></div>`).join("")}</div></section>`;
+  }
+  return html || '<div class="msg">Rien à afficher après la ligne 8.</div>';
 }
+
 function render(){
   $("#view").innerHTML = tab==="tab" ? renderTable() : renderRep();
   $("#t-tab").setAttribute("aria-selected", tab==="tab");
   $("#t-rep").setAttribute("aria-selected", tab==="rep");
+  window.scrollTo(0,0);
 }
 async function load(){
   const st=$("#status");
@@ -142,7 +165,7 @@ async function load(){
     if(txt){
       grid=toGrid(parseCSV(txt));
       const t=new Date(+localStorage.getItem("pf-time"));
-      st.textContent="Hors ligne, données du "+t.toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
+      st.textContent="Hors ligne · "+t.toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
     } else { grid=[]; st.textContent="Impossible de charger le Sheet"; }
   }
   render();
