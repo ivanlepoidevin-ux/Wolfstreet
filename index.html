@@ -149,6 +149,13 @@ function renderSection(sec, withDonut=true){
   return (sec.title?`<h2>${esc(sec.title)}</h2>`:"")+`<div class="card">${useChart?donut(vals):""}<table>${body}</table></div>`;
 }
 const PV = /plus|gain|\+\/-/;
+const TOT = /total|montant|patrimoine/;
+const TOTBEST = /valeur totale|montant total|total (du )?portefeuille|total global|patrimoine|^total$/;
+function totalCard(raw){
+  const c=raw.filter(r=>{const l=norm(r[0]);return TOT.test(l)&&!PV.test(l)&&r[1]});
+  const r=c.find(r=>TOTBEST.test(norm(r[0])))||c[0];
+  return r?`<div class="card pvc"><div class="pv one"><div class="pl">${esc(r[0])}</div><div class="big">${esc(r[1])}</div></div></div>`:"";
+}
 function pvChart(raw, range){
   const items=raw.filter(r=>PV.test(norm(r[0]))).map(r=>({label:r[0],raw:r[1]||"",v:num(r[1]||"")})).filter(i=>!isNaN(i.v));
   if(!items.length) return `<div class="msg">Aucune ligne « plus-value » trouvée dans ${range}.</div>`;
@@ -170,7 +177,7 @@ function render(){
   $("#nav").innerHTML=TABS.map((t,i)=>`<button role="tab" aria-selected="${i===cur}" data-i="${i}">${esc(t.label)}</button>`).join("");
   document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{cur=+b.dataset.i;render()});
   const t=TABS[cur], raw=sliceRange(rows,t.range), secs=buildSections(raw), pv=t.chart==="plusvalue";
-  $("#view").innerHTML = secs.length ? (pv?pvChart(raw,t.range):"")+secs.map(s=>renderSection(s,!pv)).join("") : `<div class="msg">Aucune donnée dans ${t.range}.</div>`;
+  $("#view").innerHTML = secs.length ? (pv?totalCard(raw)+pvChart(raw,t.range):"")+secs.map(s=>renderSection(s,!pv)).join("") : `<div class="msg">Aucune donnée dans ${t.range}.</div>`;
   window.scrollTo(0,0);
 }
 async function load(){
