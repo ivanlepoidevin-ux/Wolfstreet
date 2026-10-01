@@ -31,6 +31,16 @@ tr:first-child td{border-top:0}
 tr.head td{font-weight:600;color:var(--mute);background:var(--bg);font-size:13px}
 td i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:8px}
 .pos{color:var(--pos)}.neg{color:var(--neg)}
+.pvc{padding:6px 14px;margin-bottom:12px}
+.pv{padding:11px 0}.pv+.pv{border-top:1px solid var(--line)}
+.pr{display:flex;justify-content:space-between;gap:10px;margin-bottom:7px}
+.pr b{font-variant-numeric:tabular-nums}
+.trk{height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.trk i{display:block;height:100%;border-radius:4px}
+.trk i.pos{background:var(--pos)}.trk i.neg{background:var(--neg)}
+.pv.one{text-align:center;padding:20px 0}
+.pl{color:var(--mute);font-size:13px}
+.big{font:600 38px/1.2 Georgia,"Iowan Old Style",serif;font-variant-numeric:tabular-nums}
 .donut{display:block;width:min(58vw,220px);height:auto;margin:14px auto 8px}
 nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
 nav button{flex:1;padding:15px 2px;background:none;border:0;color:var(--mute);font:600 14px system-ui,sans-serif}
@@ -50,7 +60,7 @@ nav button:focus-visible,#refresh:focus-visible{outline:2px solid var(--acc);out
 const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT1ZqyzzApyrgCRhIr04OF6Ix9LHhNTYeFycQ7BomjblePKS9cTzs2MEYDcLDNo6A/pub?gid=1991388935&single=true&output=csv";
 // ▼ Les onglets de l'appli : nom + plage de cellules du Sheet
 const TABS = [
-  {label:"Récap",        range:"A1:B8"},
+  {label:"Récap",        range:"A1:B8", chart:"plusvalue"},
   {label:"Détail",       range:"A10:B30"},
   {label:"Répartitions", range:"A48:C82"}
 ];
@@ -127,16 +137,31 @@ function donut(vals){
   }).join("");
   return `<svg class="donut" viewBox="0 0 120 120" role="img" aria-label="Graphique de répartition">${arcs}</svg>`;
 }
-function renderSection(sec){
+function renderSection(sec, withDonut=true){
   const all=[...(sec.head?[sec.head]:[]),...sec.rows];
   const cols=[...Array(all[0].length).keys()].filter(c=>all.some(r=>r[c]));
   const vc=valueCol(sec);
   const chart = vc>=0 && sec.rows.every(r=>!r[vc]||!isNaN(num(r[vc])));
   const vals = chart ? sec.rows.map(r=>isNaN(num(r[vc]))?0:num(r[vc])) : [];
-  const useChart = chart && vals.reduce((a,v)=>a+Math.abs(v),0)>0;
+  const useChart = withDonut && chart && vals.reduce((a,v)=>a+Math.abs(v),0)>0;
   const tr=(r,cls,i)=>`<tr class="${cls}">${cols.map((c,k)=>`<td class="${cls?"":sign(r[c])}">${k===0&&useChart&&i>=0?`<i style="background:${color(i)}"></i>`:""}${esc(r[c])}</td>`).join("")}</tr>`;
   const body=(sec.head?tr(sec.head,"head",-1):"")+sec.rows.map((r,i)=>tr(r,"",i)).join("");
   return (sec.title?`<h2>${esc(sec.title)}</h2>`:"")+`<div class="card">${useChart?donut(vals):""}<table>${body}</table></div>`;
+}
+const PV = /plus|gain|\+\/-/;
+function pvChart(raw, range){
+  const items=raw.filter(r=>PV.test(norm(r[0]))).map(r=>({label:r[0],raw:r[1]||"",v:num(r[1]||"")})).filter(i=>!isNaN(i.v));
+  if(!items.length) return `<div class="msg">Aucune ligne « plus-value » trouvée dans ${range}.</div>`;
+  const cls=v=>v<0?"neg":"pos";
+  let h;
+  if(items.length===1){
+    const i=items[0];
+    h=`<div class="pv one"><div class="pl">${esc(i.label)}</div><div class="big ${cls(i.v)}">${esc(i.raw)}</div></div>`;
+  } else {
+    const max=Math.max(...items.map(i=>Math.abs(i.v)))||1;
+    h=items.map(i=>`<div class="pv"><div class="pr"><span>${esc(i.label)}</span><b class="${cls(i.v)}">${esc(i.raw)}</b></div><div class="trk"><i class="${cls(i.v)}" style="width:${Math.max(3,Math.abs(i.v)/max*100)}%"></i></div></div>`).join("");
+  }
+  return `<div class="card pvc">${h}</div>`;
 }
 /*UI*/
 let rows=[], cur=0;
@@ -144,8 +169,8 @@ const $ = s => document.querySelector(s);
 function render(){
   $("#nav").innerHTML=TABS.map((t,i)=>`<button role="tab" aria-selected="${i===cur}" data-i="${i}">${esc(t.label)}</button>`).join("");
   document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{cur=+b.dataset.i;render()});
-  const t=TABS[cur], secs=buildSections(sliceRange(rows,t.range));
-  $("#view").innerHTML = secs.length ? secs.map(renderSection).join("") : `<div class="msg">Aucune donnée dans ${t.range}.</div>`;
+  const t=TABS[cur], raw=sliceRange(rows,t.range), secs=buildSections(raw), pv=t.chart==="plusvalue";
+  $("#view").innerHTML = secs.length ? (pv?pvChart(raw,t.range):"")+secs.map(s=>renderSection(s,!pv)).join("") : `<div class="msg">Aucune donnée dans ${t.range}.</div>`;
   window.scrollTo(0,0);
 }
 async function load(){
