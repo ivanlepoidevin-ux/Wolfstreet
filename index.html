@@ -31,6 +31,20 @@ tr:first-child td{border-top:0}
 tr.head td{font-weight:600;color:var(--mute);background:var(--bg);font-size:13px}
 td i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:8px}
 .pos{color:var(--pos)}.neg{color:var(--neg)}
+.ar{border-top:1px solid var(--line)}
+.card>.ar:first-child{border-top:0}
+.sm{display:flex;align-items:center;gap:8px;padding:13px 14px;list-style:none;cursor:default}
+.sm::-webkit-details-marker{display:none}
+.sm::after{content:"";display:block;flex:none;width:12px;margin-left:4px;text-align:center;color:var(--mute);font-size:20px;line-height:1}
+details.ar>summary{cursor:pointer}
+details.ar>summary::after{content:"›";transform:rotate(90deg);transition:transform .15s}
+details.ar[open]>summary::after{transform:rotate(-90deg)}
+.sm .nm{flex:1;overflow-wrap:anywhere}
+.sm b,.dt b{font-variant-numeric:tabular-nums}
+.sm i{width:11px;height:11px;border-radius:3px;flex:none}
+.dt{padding:0 14px 13px 33px;display:grid;gap:7px}
+.dt div{display:flex;justify-content:space-between;gap:10px}
+.dt span{color:var(--mute);font-size:14px}
 .pvc{padding:6px 14px;margin-bottom:12px}
 .pv{padding:11px 0}.pv+.pv{border-top:1px solid var(--line)}
 .pr{display:flex;justify-content:space-between;gap:10px;margin-bottom:7px}
@@ -61,8 +75,8 @@ const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT1ZqyzzApyrgCR
 // ▼ Les onglets de l'appli : nom + plage de cellules du Sheet
 const TABS = [
   {label:"Récap",        range:"A1:B8", chart:"plusvalue"},
-  {label:"Détail",       range:"A10:B30"},
-  {label:"Répartitions", range:"A48:C82"}
+    {label:"Répartitions", range:"A48:G82", mode:"actions"},
+  {label:"Détail",       range:"A10:B30"}
 ];
 
 const norm = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
@@ -149,6 +163,23 @@ function renderSection(sec, withDonut=true){
   return (sec.title?`<h2>${esc(sec.title)}</h2>`:"")+`<div class="card">${useChart?donut(vals):""}<table>${body}</table></div>`;
 }
 const PV = /plus|gain|\+\/-/;
+function pctCol(sec){
+  let best=-1, bn=0;
+  for(const c of [1,2]){ const n=sec.rows.filter(r=>/%/.test(r[c]||"")).length; if(n>bn){bn=n;best=c;} }
+  return best>=0?best:2;
+}
+/* Répartitions : nom + %, au clic → prix d'achat (F), prix actuel (G), % */
+function renderActions(sec){
+  const pc=pctCol(sec);
+  const vals=sec.rows.map(r=>num(r[pc]||""));
+  const chart=vals.filter(v=>!isNaN(v)).length>=2 && vals.reduce((a,v)=>a+(isNaN(v)?0:Math.abs(v)),0)>0;
+  const list=sec.rows.map((r,i)=>{
+    const head=(chart?`<i style="background:${color(i)}"></i>`:"")+`<span class="nm">${esc(r[0])}</span><b>${esc(r[pc]||"")}</b>`;
+    if(!(r[4]||r[5]||r[6])) return `<div class="ar"><div class="sm">${head}</div></div>`;
+    return `<details class="ar"><summary class="sm">${head}</summary><div class="dt"><div><span>Coût total d'achat</span><b>${esc(r[4]||"–")}</b></div><div><span>PRU d'achat</span><b>${esc(r[5]||"–")}</b></div><div><span>Cours actuel (PRU actuel)</span><b>${esc(r[6]||"–")}</b></div><div><span>Pourcentage</span><b>${esc(r[pc]||"–")}</b></div></div></details>`;
+  }).join("");
+  return (sec.title?`<h2>${esc(sec.title)}</h2>`:"")+`<div class="card">${chart?donut(vals.map(v=>isNaN(v)?0:v)):""}${list}</div>`;
+}
 const TOT = /total|montant|patrimoine/;
 const TOTBEST = /valeur totale|montant total|total (du )?portefeuille|total global|patrimoine|^total$/;
 function totalCard(raw){
@@ -177,7 +208,7 @@ function render(){
   $("#nav").innerHTML=TABS.map((t,i)=>`<button role="tab" aria-selected="${i===cur}" data-i="${i}">${esc(t.label)}</button>`).join("");
   document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{cur=+b.dataset.i;render()});
   const t=TABS[cur], raw=sliceRange(rows,t.range), secs=buildSections(raw), pv=t.chart==="plusvalue";
-  $("#view").innerHTML = secs.length ? (pv?totalCard(raw)+pvChart(raw,t.range):"")+secs.map(s=>renderSection(s,!pv)).join("") : `<div class="msg">Aucune donnée dans ${t.range}.</div>`;
+  $("#view").innerHTML = secs.length ? (pv?totalCard(raw)+pvChart(raw,t.range):"")+secs.map(s=>t.mode==="actions"?renderActions(s):renderSection(s,!pv)).join("") : `<div class="msg">Aucune donnée dans ${t.range}.</div>`;
   window.scrollTo(0,0);
 }
 async function load(){
