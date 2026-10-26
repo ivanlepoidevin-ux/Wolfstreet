@@ -12,8 +12,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Portefeuille">
 <style>
-:root{--bg:#EDF0F3;--card:#fff;--ink:#16222D;--mute:#5C6B78;--line:#D3DAE0;--acc:#0E6A6A;--pos:#1B7A4B;--neg:#B0362E;--sl:40%}
-@media (prefers-color-scheme:dark){:root{--bg:#101A22;--card:#18242E;--ink:#E7EDF2;--mute:#93A3B0;--line:#2A3946;--acc:#5FC1B8;--pos:#5DCB8F;--neg:#F08A80;--sl:62%}}
+:root{--bg:#EDF0F3;--card:#fff;--ink:#16222D;--mute:#5C6B78;--line:#D3DAE0;--acc:#0E6A6A;--pos:#1B7A4B;--neg:#B0362E;--sl:40%;--buy:#9A6300}
+@media (prefers-color-scheme:dark){:root{--bg:#101A22;--card:#18242E;--ink:#E7EDF2;--mute:#93A3B0;--line:#2A3946;--acc:#5FC1B8;--pos:#5DCB8F;--neg:#F08A80;--sl:62%;--buy:#E6B85C}}
 *{box-sizing:border-box}
 html,body{margin:0;max-width:100%;overflow-x:hidden;-webkit-text-size-adjust:100%}
 body{background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-top:env(safe-area-inset-top,0px)}
@@ -45,6 +45,9 @@ details.ar[open]>summary::after{transform:rotate(-90deg)}
 .dt{padding:0 14px 13px 33px;display:grid;gap:7px}
 .dt div{display:flex;justify-content:space-between;gap:10px}
 .dt span{color:var(--mute);font-size:14px}
+.dt .buy,.dt .cur{border-left:3px solid;padding-left:9px;border-radius:2px}
+.dt .buy{border-color:var(--buy)}.dt .buy b{color:var(--buy)}
+.dt .cur{border-color:var(--acc)}.dt .cur b{color:var(--acc)}
 .pvc{padding:6px 14px;margin-bottom:12px}
 .pv{padding:11px 0}.pv+.pv{border-top:1px solid var(--line)}
 .pr{display:flex;justify-content:space-between;gap:10px;margin-bottom:7px}
@@ -176,7 +179,7 @@ function renderActions(sec){
   const list=sec.rows.map((r,i)=>{
     const head=(chart?`<i style="background:${color(i)}"></i>`:"")+`<span class="nm">${esc(r[0])}</span><b>${esc(r[pc]||"")}</b>`;
     if(!(r[4]||r[5]||r[6])) return `<div class="ar"><div class="sm">${head}</div></div>`;
-    return `<details class="ar"><summary class="sm">${head}</summary><div class="dt"><div><span>Coût total d'achat</span><b>${esc(r[4]||"–")}</b></div><div><span>PRU d'achat</span><b>${esc(r[5]||"–")}</b></div><div><span>Cours actuel (PRU actuel)</span><b>${esc(r[6]||"–")}</b></div><div><span>Pourcentage</span><b>${esc(r[pc]||"–")}</b></div></div></details>`;
+    return `<details class="ar"><summary class="sm">${head}</summary><div class="dt"><div class="buy"><span>Coût total d'achat</span><b>${esc(r[4]||"–")}</b></div><div class="buy"><span>PRU d'achat</span><b>${esc(r[5]||"–")}</b></div><div class="cur"><span>PRU actuel</span><b>${esc(r[6]||"–")}</b></div><div class="cur"><span>Coût total actuel</span><b>${esc(r[1]||"–")}</b></div><div><span>Pourcentage</span><b>${esc(r[pc]||"–")}</b></div></div></details>`;
   }).join("");
   return (sec.title?`<h2>${esc(sec.title)}</h2>`:"")+`<div class="card">${chart?donut(vals.map(v=>isNaN(v)?0:v)):""}${list}</div>`;
 }
